@@ -21,6 +21,9 @@ COPTS = select({
         "-Woverloaded-virtual",
         "-Wno-sign-compare",
         "-Wno-nonnull",
+        # ARENASTRING PATCH: gcc-12 has more warning
+        "-Wno-dangling-else",
+        "-Wno-deprecated-declarations",
         "-Werror",
     ],
 })

@@ -21,10 +21,13 @@ COPTS = select({
         "-Woverloaded-virtual",
         "-Wno-sign-compare",
         "-Wno-nonnull",
-        # ARENASTRING PATCH: gcc-12 has more warning
+        # ARENASTRING PATCH: ignore more warning with -Werror
+        "-Wno-array-bounds",
         "-Wno-dangling-else",
         "-Wno-deprecated-declarations",
-        "-Werror",
+        "-Wno-maybe-uninitialized",
+        # ARENASTRING PATCH: more save to disable -Werror when using as a dependency
+        #"-Werror",
     ],
 })
 

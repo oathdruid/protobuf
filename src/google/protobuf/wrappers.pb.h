@@ -567,6 +567,7 @@ class PROTOBUF_EXPORT StringValue final : public ::google::protobuf::Message
   inline PROTOBUF_ALWAYS_INLINE void _internal_set_value(
       const std::string& value);
   std::string* _internal_mutable_value();
+  ::google::protobuf::MaybeArenaStringAccessor _internal_mutable_value_accessor();
 
   public:
   // @@protoc_insertion_point(class_scope:google.protobuf.StringValue)
@@ -1418,6 +1419,7 @@ class PROTOBUF_EXPORT BytesValue final : public ::google::protobuf::Message
   inline PROTOBUF_ALWAYS_INLINE void _internal_set_value(
       const std::string& value);
   std::string* _internal_mutable_value();
+  ::google::protobuf::MaybeArenaStringAccessor _internal_mutable_value_accessor();
 
   public:
   // @@protoc_insertion_point(class_scope:google.protobuf.BytesValue)
@@ -1837,7 +1839,7 @@ inline PROTOBUF_ALWAYS_INLINE void StringValue::set_value(Arg_&& arg,
   // @@protoc_insertion_point(field_set:google.protobuf.StringValue.value)
 }
 inline std::string* StringValue::mutable_value() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_value();
+  auto _s = _internal_mutable_value();
   // @@protoc_insertion_point(field_mutable:google.protobuf.StringValue.value)
   return _s;
 }
@@ -1853,10 +1855,18 @@ inline std::string* StringValue::_internal_mutable_value() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _impl_.value_.Mutable( GetArena());
 }
+inline ::google::protobuf::MaybeArenaStringAccessor StringValue::_internal_mutable_value_accessor() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.value_.MutableAccessor( GetArena());
+}
 inline std::string* StringValue::release_value() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:google.protobuf.StringValue.value)
-  return _impl_.value_.Release();
+  auto* released = _impl_.value_.Release();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  _impl_.value_.Set("", GetArena());
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  return released;
 }
 inline void StringValue::set_allocated_value(std::string* value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
@@ -1891,7 +1901,7 @@ inline PROTOBUF_ALWAYS_INLINE void BytesValue::set_value(Arg_&& arg,
   // @@protoc_insertion_point(field_set:google.protobuf.BytesValue.value)
 }
 inline std::string* BytesValue::mutable_value() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_value();
+  auto _s = _internal_mutable_value();
   // @@protoc_insertion_point(field_mutable:google.protobuf.BytesValue.value)
   return _s;
 }
@@ -1907,10 +1917,18 @@ inline std::string* BytesValue::_internal_mutable_value() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _impl_.value_.Mutable( GetArena());
 }
+inline ::google::protobuf::MaybeArenaStringAccessor BytesValue::_internal_mutable_value_accessor() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.value_.MutableAccessor( GetArena());
+}
 inline std::string* BytesValue::release_value() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:google.protobuf.BytesValue.value)
-  return _impl_.value_.Release();
+  auto* released = _impl_.value_.Release();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  _impl_.value_.Set("", GetArena());
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  return released;
 }
 inline void BytesValue::set_allocated_value(std::string* value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);

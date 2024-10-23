@@ -291,7 +291,7 @@ inline void FieldMask::clear_paths() {
 }
 inline std::string* FieldMask::add_paths() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  std::string* _s = _internal_mutable_paths()->Add();
+  auto _s = _internal_mutable_paths()->AddString();
   // @@protoc_insertion_point(field_add_mutable:google.protobuf.FieldMask.paths)
   return _s;
 }
@@ -303,12 +303,12 @@ inline const std::string& FieldMask::paths(int index) const
 inline std::string* FieldMask::mutable_paths(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:google.protobuf.FieldMask.paths)
-  return _internal_mutable_paths()->Mutable(index);
+  return _internal_mutable_paths()->MutableString(index);
 }
 template <typename Arg_, typename... Args_>
 inline void FieldMask::set_paths(int index, Arg_&& value, Args_... args) {
   ::google::protobuf::internal::AssignToString(
-      *_internal_mutable_paths()->Mutable(index),
+      *_internal_mutable_paths()->MutableAccessor(index),
       std::forward<Arg_>(value), args... );
   // @@protoc_insertion_point(field_set:google.protobuf.FieldMask.paths)
 }

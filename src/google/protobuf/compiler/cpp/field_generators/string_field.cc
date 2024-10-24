@@ -78,6 +78,16 @@ class SingularString : public FieldGeneratorBase {
     return is_inlined() ? ArenaDtorNeeds::kOnDemand : ArenaDtorNeeds::kNone;
   }
 
+  void GenerateArenaDestructorCode(io::Printer* p) const override {
+    if (!is_inlined()) return;
+
+    p->Emit(R"cc(
+      if (!_this->_internal_$name$_donated()) {
+        _this->$field_$.~InlinedStringField();
+      }
+    )cc");
+  }
+
   void GeneratePrivateMembers(io::Printer* p) const override {
     // Skips the automatic destruction if inlined; rather calls it explicitly if
     // allocating arena is null.
@@ -108,16 +118,6 @@ class SingularString : public FieldGeneratorBase {
         _this->_internal_set_$name$(from._internal_$name$());
       )cc");
     }
-  }
-
-  void GenerateArenaDestructorCode(io::Printer* p) const override {
-    if (!is_inlined()) return;
-
-    p->Emit(R"cc(
-      if (!_this->_internal_$name$_donated()) {
-        _this->$field_$.~InlinedStringField();
-      }
-    )cc");
   }
 
   void GenerateNonInlineAccessorDefinitions(io::Printer* p) const override {
@@ -262,7 +262,17 @@ void SingularString::GenerateAccessorDeclarations(io::Printer* p) const {
           p->Emit(R"cc(
             inline PROTOBUF_ALWAYS_INLINE bool _internal_$name$_donated() const;
           )cc");
-        }}},
+        }},
+       // ARENASTRING PATCH: change mutable_xxx function return value to
+       //                    MaybeArenaStringAccessor when cc_mutable_donated_string=true
+       {"mutable_return_type", [&] {
+         if (field_->file()->options().cc_mutable_donated_string()) {
+           p->Emit("$pb$::MaybeArenaStringAccessor");
+         } else {
+           p->Emit("std::string*");
+         }
+       }},
+      },
       R"cc(
         $DEPRECATED$ const std::string& $name$() const;
         //~ Using `Arg_ = const std::string&` will make the type of `arg`
@@ -271,7 +281,7 @@ void SingularString::GenerateAccessorDeclarations(io::Printer* p) const {
         //~ default.
         template <typename Arg_ = const std::string&, typename... Args_>
         $DEPRECATED$ void $set_name$(Arg_&& arg, Args_... args);
-        $DEPRECATED$ std::string* $mutable_name$();
+        $DEPRECATED$ $mutable_return_type$ $mutable_name$();
         $DEPRECATED$ PROTOBUF_NODISCARD std::string* $release_name$();
         $DEPRECATED$ void $set_allocated_name$(std::string* value);
 
@@ -280,6 +290,7 @@ void SingularString::GenerateAccessorDeclarations(io::Printer* p) const {
         inline PROTOBUF_ALWAYS_INLINE void _internal_set_$name$(
             const std::string& value);
         std::string* _internal_mutable_$name$();
+        $pb$::MaybeArenaStringAccessor _internal_mutable_$name$_accessor();
         $donated$;
 
         public:
@@ -326,31 +337,21 @@ void SingularString::ReleaseImpl(io::Printer* p) const {
     return;
   }
 
-  if (!HasHasbit(field_)) {
-    p->Emit(R"cc(
-      return $field_$.Release();
-    )cc");
-    return;
-  }
-
-  if (is_inlined()) {
+  if (HasHasbit(field_)) {
     p->Emit(R"cc(
       if (($has_hasbit$) == 0) {
         return nullptr;
       }
       $clear_hasbit$;
+    )cc");
+  }
 
+  if (is_inlined()) {
+    p->Emit(R"cc(
       return $field_$.Release(GetArena(), _internal_$name_internal$_donated());
     )cc");
     return;
   }
-
-  p->Emit(R"cc(
-    if (($has_hasbit$) == 0) {
-      return nullptr;
-    }
-    $clear_hasbit$;
-  )cc");
 
   if (!EmptyDefault()) {
     p->Emit(R"cc(
@@ -442,6 +443,20 @@ void SingularString::GenerateInlineAccessorDefinitions(io::Printer* p) const {
            SafeFunctionName(field_->containing_type(), field_, "release_")},
           {"release_impl", [&] { ReleaseImpl(p); }},
           {"set_allocated_impl", [&] { SetAllocatedImpl(p); }},
+          // ARENASTRING PATCH: change mutable_xxx function return value to
+          //                    MaybeArenaStringAccessor when cc_mutable_donated_string=true
+          {"mutable_return_type", [&] {
+             if (field_->file()->options().cc_mutable_donated_string()) {
+               p->Emit("$pb$::MaybeArenaStringAccessor");
+             } else {
+               p->Emit("std::string*");
+             }
+           }},
+          {"mutable_suffix", [&] {
+             if (field_->file()->options().cc_mutable_donated_string()) {
+               p->Emit("_accessor");
+             }
+           }},
       },
       R"cc(
         inline const std::string& $Msg$::$name$() const
@@ -463,10 +478,10 @@ void SingularString::GenerateInlineAccessorDefinitions(io::Printer* p) const {
           $annotate_set$;
           // @@protoc_insertion_point(field_set:$pkg.Msg.field$)
         }
-        inline std::string* $Msg$::mutable_$name$() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+        inline $mutable_return_type$ $Msg$::mutable_$name$() ABSL_ATTRIBUTE_LIFETIME_BOUND {
           $WeakDescriptorSelfPin$;
           $PrepareSplitMessageForWrite$;
-          std::string* _s = _internal_mutable_$name_internal$();
+          auto _s = _internal_mutable_$name_internal$$mutable_suffix$();
           $annotate_mutable$;
           // @@protoc_insertion_point(field_mutable:$pkg.Msg.field$)
           return _s;
@@ -487,6 +502,11 @@ void SingularString::GenerateInlineAccessorDefinitions(io::Printer* p) const {
           $TsanDetectConcurrentMutation$;
           $update_hasbit$;
           return $field_$.Mutable($lazy_args$, $set_args$);
+        }
+        inline $pb$::MaybeArenaStringAccessor $Msg$::_internal_mutable_$name_internal$_accessor() {
+          $TsanDetectConcurrentMutation$;
+          $update_hasbit$;
+          return $field_$.MutableAccessor($lazy_args$, $set_args$);
         }
         inline std::string* $Msg$::$release_name$() {
           $WeakDescriptorSelfPin$;
@@ -837,12 +857,22 @@ void RepeatedString::GenerateAccessorDeclarations(io::Printer* p) const {
   auto v3 = p->WithVars(
       AnnotatedAccessors(field_, {"mutable_"}, AnnotationCollector::kAlias));
 
-  p->Emit(R"cc(
+  // ARENASTRING PATCH: change mutable_xxx function return value to
+  //                    MaybeArenaStringAccessor when cc_mutable_donated_string=true
+  p->Emit({{"mutable_return_type",
+            [&] {
+              if (field_->file()->options().cc_mutable_donated_string()) {
+                p->Emit("$pb$::MaybeArenaStringAccessor");
+              } else {
+                p->Emit("std::string*");
+              }
+            }}},
+          R"cc(
     $DEPRECATED$ const std::string& $name$(int index) const;
-    $DEPRECATED$ std::string* $mutable_name$(int index);
+    $DEPRECATED$ $mutable_return_type$ $mutable_name$(int index);
     template <typename Arg_ = const std::string&, typename... Args_>
     $DEPRECATED$ void set_$name$(int index, Arg_&& value, Args_... args);
-    $DEPRECATED$ std::string* $add_name$();
+    $DEPRECATED$ $mutable_return_type$ $add_name$();
     template <typename Arg_ = const std::string&, typename... Args_>
     $DEPRECATED$ void $add_name$(Arg_&& value, Args_... args);
     $DEPRECATED$ const $pb$::RepeatedPtrField<std::string>& $name$() const;
@@ -873,12 +903,29 @@ void RepeatedString::GenerateInlineAccessorDefinitions(io::Printer* p) const {
                p->Emit(", $pbi$::BytesTag{}");
              }
            }},
+           // ARENASTRING PATCH: change mutable_xxx function return value to
+           //                    MaybeArenaStringAccessor when cc_mutable_donated_string=true
+           {"mutable_return_type",
+            [&] {
+              if (field_->file()->options().cc_mutable_donated_string()) {
+                p->Emit("$pb$::MaybeArenaStringAccessor");
+              } else {
+                p->Emit("std::string*");
+              }
+            }},
+           {"mutable_suffix", [&] {
+              if (field_->file()->options().cc_mutable_donated_string()) {
+                p->Emit("Accessor");
+              } else {
+                p->Emit("String");
+              }
+            }},
       },
       R"cc(
-        inline std::string* $Msg$::add_$name$() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+        inline $mutable_return_type$ $Msg$::add_$name$() ABSL_ATTRIBUTE_LIFETIME_BOUND {
           $WeakDescriptorSelfPin$;
           $TsanDetectConcurrentMutation$;
-          std::string* _s = _internal_mutable_$name_internal$()->Add();
+          auto _s = _internal_mutable_$name_internal$()->Add$mutable_suffix$();
           $annotate_add_mutable$;
           // @@protoc_insertion_point(field_add_mutable:$pkg.Msg.field$)
           return _s;
@@ -890,18 +937,18 @@ void RepeatedString::GenerateInlineAccessorDefinitions(io::Printer* p) const {
           // @@protoc_insertion_point(field_get:$pkg.Msg.field$)
           return _internal_$name_internal$().$Get$(index$GetExtraArg$);
         }
-        inline std::string* $Msg$::mutable_$name$(int index)
+        inline $mutable_return_type$ $Msg$::mutable_$name$(int index)
             ABSL_ATTRIBUTE_LIFETIME_BOUND {
           $WeakDescriptorSelfPin$;
           $annotate_mutable$;
           // @@protoc_insertion_point(field_mutable:$pkg.Msg.field$)
-          return _internal_mutable_$name_internal$()->Mutable(index);
+          return _internal_mutable_$name_internal$()->Mutable$mutable_suffix$(index);
         }
         template <typename Arg_, typename... Args_>
         inline void $Msg$::set_$name$(int index, Arg_&& value, Args_... args) {
           $WeakDescriptorSelfPin$;
           $pbi$::AssignToString(
-              *_internal_mutable_$name_internal$()->Mutable(index),
+              *_internal_mutable_$name_internal$()->MutableAccessor(index),
               std::forward<Arg_>(value), args... $bytes_tag$);
           $annotate_set$;
           // @@protoc_insertion_point(field_set:$pkg.Msg.field$)

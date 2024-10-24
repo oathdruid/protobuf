@@ -1325,6 +1325,7 @@ void Reflection::InternalSwap(Message* lhs, Message* rhs) const {
 }
 
 void Reflection::MaybePoisonAfterClear(Message& root) const {
+  fprintf(stderr, "Reflection::MaybePoisonAfterClear\n");
   root.Clear();
 }
 
@@ -2001,9 +2002,13 @@ void Reflection::SetString(Message* message, const FieldDescriptor* field,
                            const absl::Cord& value) const {
   USAGE_MUTABLE_CHECK_ALL(SetString, SINGULAR, STRING);
   if (field->is_extension()) {
-    return absl::CopyCordToString(value,
-                                  MutableExtensionSet(message)->MutableString(
-                                      field->number(), field->type(), field));
+    auto accessor = MutableExtensionSet(message)->MutableAccessor(
+        field->number(), field->type(), field);
+    accessor.clear();
+    accessor.reserve(value.size());
+    for (auto chunk : value.Chunks()) {
+      accessor.append(chunk);
+    }
   } else {
     switch (field->cpp_string_type()) {
       case FieldDescriptor::CppStringType::kCord:
@@ -2125,8 +2130,8 @@ void Reflection::SetRepeatedString(Message* message,
         break;
       case FieldDescriptor::CppStringType::kView:
       case FieldDescriptor::CppStringType::kString:
-        MutableRepeatedField<std::string>(message, field, index)
-            ->assign(std::move(value));
+        MutableRaw<RepeatedPtrField<std::string>>(message, field)
+            ->MutableAccessor(index)->assign(std::move(value));
         break;
     }
   }
@@ -2146,7 +2151,8 @@ void Reflection::AddString(Message* message, const FieldDescriptor* field,
         break;
       case FieldDescriptor::CppStringType::kView:
       case FieldDescriptor::CppStringType::kString:
-        AddField<std::string>(message, field)->assign(std::move(value));
+        MutableRaw<RepeatedPtrField<std::string>>(message, field)
+            ->Add(std::move(value));
         break;
     }
   }

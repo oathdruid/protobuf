@@ -3,7 +3,7 @@
 
 module(
     name = "protobuf",
-    version = "28.3",  # Automatically updated on release
+    version = "28.3.arenastring",  # Automatically updated on release
     compatibility_level = 1,
     repo_name = "com_google_protobuf",
 )
@@ -70,3 +70,14 @@ crate.spec(
 )
 crate.from_specs()
 use_repo(crate, crate_index = "crates")
+
+bazel_dep(name = "googletest", version = "1.15.2", repo_name = "com_google_googletest", dev_dependency = True)
+bazel_dep(name = "rules_ruby", dev_dependency = True)
+archive_override(
+    module_name = "rules_ruby",
+    urls = ["https://github.com/protocolbuffers/rules_ruby/archive/b7f3e9756f3c45527be27bc38840d5a1ba690436.tar.gz"],
+    strip_prefix = "rules_ruby-b7f3e9756f3c45527be27bc38840d5a1ba690436",
+    integrity = "sha256-RNo21X/p9slOdF912FLprLnxvZHMXBTxaUDGFmm2bx8=",
+    patches = ["third_party/rules_ruby.patch"],
+    patch_strip = 1,
+)

@@ -147,7 +147,11 @@ TEST(ArenaAlign, Padded) {
 }
 
 TEST(ArenaAlign, CeilPtr) {
-  alignas(64) char p[129] = {0};
+  struct alignas(64) S {
+    char p[129] = {0};
+  };
+  auto s = ::std::make_unique<S>();
+  auto p = s->p;
   auto align_64 = ArenaAlignAs(64);
   EXPECT_THAT(align_64.Ceil(p + 0), Eq(p));
   EXPECT_THAT(align_64.Ceil(p + 1), Eq(p + 64));
@@ -159,7 +163,11 @@ TEST(ArenaAlign, CeilPtr) {
 }
 
 TEST(ArenaAlign, CheckAligned) {
-  alignas(128) char p[129] = {0};
+  struct alignas(64) S {
+    char p[129] = {0};
+  };
+  auto s = ::std::make_unique<S>();
+  auto p = s->p;
   auto align_64 = ArenaAlignAs(64);
   EXPECT_THAT(align_64.CheckAligned(p + 0), Eq(p));
   EXPECT_THAT(align_64.CheckAligned(p + 64), Eq(p + 64));
@@ -178,7 +186,11 @@ TEST(ArenaAlign, CheckAligned) {
 }
 
 TEST(ArenaAlign, CeilDefaultAligned) {
-  alignas(128) char p[129] = {0};
+  struct alignas(64) S {
+    char p[129] = {0};
+  };
+  auto s = ::std::make_unique<S>();
+  auto p = s->p;
   auto align_64 = ArenaAlignAs(64);
   EXPECT_THAT(align_64.CeilDefaultAligned(p + 0), Eq(p));
   EXPECT_THAT(align_64.CeilDefaultAligned(p + 8), Eq(p + 64));

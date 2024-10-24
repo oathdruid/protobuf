@@ -336,27 +336,52 @@ struct BytesTag {
 // Assigns to `dest` the content of `value`, optionally bounded by `size`.
 // This overload set is used to implement `set_xxx()` methods for repeated
 // string fields in generated code.
-inline void AssignToString(std::string& dest, const std::string& value,
+//inline void AssignToString(std::string& dest, const std::string& value,
+//                           BytesTag tag = BytesTag{}) {
+//  dest.assign(value);
+//}
+//inline void AssignToString(std::string& dest, std::string&& value,
+//                           BytesTag tag = BytesTag{}) {
+//  dest.assign(std::move(value));
+//}
+//inline void AssignToString(std::string& dest, const char* value,
+//                           BytesTag tag = BytesTag{}) {
+//  dest.assign(value);
+//}
+//inline void AssignToString(std::string& dest, const char* value,
+//                           std::size_t size) {
+//  dest.assign(value, size);
+//}
+//inline void AssignToString(std::string& dest, const void* value,
+//                           std::size_t size, BytesTag tag) {
+//  dest.assign(reinterpret_cast<const char*>(value), size);
+//}
+//inline void AssignToString(std::string& dest, absl::string_view value,
+//                           BytesTag tag = BytesTag{}) {
+//  dest.assign(value.data(), value.size());
+//}
+
+inline void AssignToString(MaybeArenaStringAccessor dest, const std::string& value,
                            BytesTag tag = BytesTag{}) {
   dest.assign(value);
 }
-inline void AssignToString(std::string& dest, std::string&& value,
+inline void AssignToString(MaybeArenaStringAccessor dest, std::string&& value,
                            BytesTag tag = BytesTag{}) {
   dest.assign(std::move(value));
 }
-inline void AssignToString(std::string& dest, const char* value,
+inline void AssignToString(MaybeArenaStringAccessor dest, const char* value,
                            BytesTag tag = BytesTag{}) {
   dest.assign(value);
 }
-inline void AssignToString(std::string& dest, const char* value,
+inline void AssignToString(MaybeArenaStringAccessor dest, const char* value,
                            std::size_t size) {
   dest.assign(value, size);
 }
-inline void AssignToString(std::string& dest, const void* value,
+inline void AssignToString(MaybeArenaStringAccessor dest, const void* value,
                            std::size_t size, BytesTag tag) {
   dest.assign(reinterpret_cast<const char*>(value), size);
 }
-inline void AssignToString(std::string& dest, absl::string_view value,
+inline void AssignToString(MaybeArenaStringAccessor dest, absl::string_view value,
                            BytesTag tag = BytesTag{}) {
   dest.assign(value.data(), value.size());
 }
@@ -367,7 +392,7 @@ inline void AssignToString(std::string& dest, absl::string_view value,
 template <typename Arg, typename... Args>
 void AddToRepeatedPtrField(google::protobuf::RepeatedPtrField<std::string>& dest,
                            Arg&& value, Args... args) {
-  AssignToString(*dest.Add(), std::forward<Arg>(value), args...);
+  AssignToString(*dest.AddAccessor(), std::forward<Arg>(value), args...);
 }
 inline void AddToRepeatedPtrField(google::protobuf::RepeatedPtrField<std::string>& dest,
                                   std::string&& value,

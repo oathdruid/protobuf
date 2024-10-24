@@ -58,6 +58,7 @@
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/test_util.h"
 #include "google/protobuf/test_util2.h"
+#include "google/protobuf/unittest.pb.h"
 
 #if HAVE_ZLIB
 #include "google/protobuf/io/gzip_stream.h"
